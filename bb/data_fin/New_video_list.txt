@@ -50,7 +50,7 @@ Kersenboom/ Opnames/ Sessie (3)/Proefpersoon22030_Sessie3
 
 
 Invisible Cases: 
-Grote Beer (number of children = 13)
+Grote Beer (number of children = 12)
 Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51007_sessie1
 Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51009_sessie1
 Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51010_sessie1
@@ -58,7 +58,6 @@ Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51011_sessie1
 Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51012_sessie1
 Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51013_sessie1
 Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51014_sessie1
-Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51015_sessie1
 Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51016_sessie1
 Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51017_sessie1
 Grote Beer/ Opnames/ Sessie 1/Proefpersoon_51019_sessie1
@@ -71,7 +70,6 @@ Grote Beer/ Opnames/ Sessie 2/Proefpersoon_51011_sessie2
 Grote Beer/ Opnames/ Sessie 2/Proefpersoon_51012_sessie2
 Grote Beer/ Opnames/ Sessie 2/Proefpersoon_51013_sessie2
 Grote Beer/ Opnames/ Sessie 2/Proefpersoon_51014_sessie2
-Grote Beer/ Opnames/ Sessie 2/Proefpersoon_51015_sessie2
 Grote Beer/ Opnames/ Sessie 2/Proefpersoon_51016_sessie2
 Grote Beer/ Opnames/ Sessie 2/Proefpersoon_51017_sessie2
 Grote Beer/ Opnames/ Sessie 2/Proefpersoon_51019_sessie2
@@ -84,17 +82,19 @@ Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51011_sessie3
 Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51012_sessie3
 Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51013_sessie3
 Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51014_sessie3
-Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51015_sessie3
 Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51016_sessie3
 Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51017_sessie3
 Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51019_sessie3
 Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51020_sessie3
 Grote Beer/ Opnames/ Sessie 3/Proefpersoon_51021_sessie3
 
-Noorderbreedte (number of children = 2)
+Noorderbreedte (number of children = 3)
 Noorderbreedte/ Opnames/ Sessie 1/Proefpersoon_11009_sessie1
 Noorderbreedte/ Opnames/ Sessie 1/Proefpersoon_11029_sessie1
+Noorderbreedte /Opnames/ Sessie 1/Proefpersoon_11012_sessie1
 Noorderbreedte/ Opnames/ Sessie 2/Proefpersoon_11009_sessie2
 Noorderbreedte/ Opnames/ Sessie 2/Proefpersoon_11029_sessie2
+Noorderbreedte/ Opnames/ Sessie 2/Proefpersoon_11012_sessie2
 Noorderbreedte/ Opnames/ Sessie 3/Proefpersoon_11009_sessie3
 Noorderbreedte/ Opnames/ Sessie 3/Proefpersoon_11029_sessie3
+Noorderbreedte/ Opnames/ Sessie 3/Proefpersoon_11012_sessie3

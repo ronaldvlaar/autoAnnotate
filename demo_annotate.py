@@ -35,6 +35,7 @@ from model import L2CS
 
 import pandas as pd
 from readbbtxt import readbbtxt
+import math
 
 import cv2
 
@@ -46,10 +47,6 @@ datafile = 'pixel_position_vis.txt'
 data = readbbtxt(datafolder+datafile)
 # remove .png extension from filenames
 data['file'] = data['file'].apply(lambda x: x[:-4])
-
-filename = '33001_sessie1_taskrobotEngagement'
-ext = '.MP4'
-file = filename+ext
 
 
 def parse_args():
@@ -106,21 +103,28 @@ def get_classname(id):
         return 'elsewhere'
     elif id == 4:
         return 'unknown'
-    
+
 
 # https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
 
-def line_intersect(x1,y1,x2,y2,x3,y3,x4,y4):
-        """
-        Returns the coordinates px, py. p is the intersection of the lines
-        defined by ((x1, y1), (x2, y2)) and ((x3, y3), (x4, y4))
-        """
-        px= ( (x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4) ) / ( (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4) ) 
-        py= ( (x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4) ) / ( (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4) )
-        return int(px), int(py)
+def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
+    """
+    Returns the coordinates px, py. p is the intersection of the lines
+    defined by ((x1, y1), (x2, y2)) and ((x3, y3), (x4, y4))
+    """
+
+    denominator = ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4))
+
+    # Lines are parallel
+    if denominator == 0:  
+        return -1, -1
+    px = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) / denominator
+    py = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) / denominator
+    
+    return int(px), int(py)
 
 
-def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred):
+def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred, filename):
     """
     returns 
     0 : pen & paper
@@ -132,7 +136,7 @@ def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred):
 
     if pitch_pred == NOFACE and jaw_pred == NOFACE:
         return 4
-    
+
     (h, w) = image_in.shape[:2]
     length = w/2
     pos = (int(a+c / 2.0), int(b+d / 2.0))
@@ -140,20 +144,30 @@ def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred):
     dy = -length * np.sin(jaw_pred)
     gazex = round(pos[0] + dx)
     gazey = round(pos[1] + dy)
-   
+
     # Check if gaze vector leaves the image
     if gazex < 0 or gazex > w or gazey < 0 or gazey > h:
         # Do line intersection to find at which point the gaze vector line
         # leaves the image.
-        x3, y3, x4, y4 = 0,0,w,0
         
-        y3 = gazey if 0 <= gazey <= h else 0 if gazey < 0 else h
-        y4=y3
-
+        # top, right, bottom, left vector line of image boundaries
         x1, y1 = pos[0], pos[1]
         x2, y2 = gazex, gazey
+        lines = [(0, 0, w, 0), (w, 0, w, h), (0, h, w, h), (0, 0, 0, h)]
 
-        gazex, gazey = line_intersect(x1, y1, x2, y2, x3, y3, x4, y4)
+        for x3, y3, x4, y4 in lines:
+            gazextemp, gazeytemp = line_intersect(x1, y1, x2, y2, x3, y3, x4, y4)
+            if 0 < gazextemp < w and 0 < gazeytemp < h:
+                gazex = gazextemp
+                gazey = gazeytemp
+                break
+
+        # x3, y3, x4, y4 = 0, 0, w, 0
+        # y3 = gazey if 0 <= gazey <= h else 0 if gazey < 0 else h
+        # y4 = y3
+        # x1, y1 = pos[0], pos[1]
+        # x2, y2 = gazex, gazey
+        # gazex, gazey = line_intersect(x1, y1, x2, y2, x3, y3, x4, y4)
 
     rec = data[data['file'] == filename].iloc[0]
     # Check small objects first because if e.g. tablet bb intersects with bb of robot and gaze is towards the parts of intersection, changes are higher the child is indeed looking at the
@@ -167,7 +181,7 @@ def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred):
         return 1
     else:
         return 3
-    
+
 
 def get_largest_face(faces):
     """
@@ -196,40 +210,7 @@ def get_largest_face(faces):
     return faces[largest_face_idx]
 
 
-if __name__ == '__main__':
-    args = parse_args()
-
-    cudnn.enabled = True
-    arch = args.arch
-    batch_size = 1
-    # cam = args.cam_id
-    gpu = select_device(args.gpu_id, batch_size=batch_size)
-    snapshot_path = args.snapshot
-
-    transformations = transforms.Compose([
-        transforms.Resize(448),
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
-    ])
-
-    model = getArch(arch, 90)
-    print('Loading snapshot.')
-    saved_state_dict = torch.load(snapshot_path)
-    model.load_state_dict(saved_state_dict)
-    model.cuda(gpu)
-    model.eval()
-
-    softmax = nn.Softmax(dim=1)
-    detector = RetinaFace(gpu_id=0)
-    idx_tensor = [idx for idx in range(90)]
-    idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
-    x = 0
-
-    cap = cv2.VideoCapture('testvid/'+file)
-
+def annotate(model, softmax, detector, idx_tensor, cap, filename):
     # Check if the file is opened correctly
     if not cap.isOpened():
         raise IOError("Could not read the video file")
@@ -248,8 +229,8 @@ if __name__ == '__main__':
 
             faces = detector(frame)
 
-            faces = [face for face in faces if face[2] >=0.95]
-            
+            faces = [face for face in faces if face[2] >= 0.95]
+
             if len(faces) > 0:
                 # Assume biggest face in scene is the childs face. This is the only face relevant
                 # for the gaze estimation
@@ -293,18 +274,21 @@ if __name__ == '__main__':
                 yaw_predicted_.append(yaw_predicted)
 
                 draw_gaze(x_min, y_min, bbox_width, bbox_height, frame,
-                            (pitch_predicted, yaw_predicted), color=(0, 0, 255))
+                          (pitch_predicted, yaw_predicted), color=(0, 0, 255))
                 cv2.rectangle(frame, (x_min, y_min),
-                                (x_max, y_max), (0, 255, 0), 1)
-                gaze_class = classify_gaze(x_min, y_min, bbox_width, bbox_height, frame, pitch_predicted_[-1], yaw_predicted_[-1])
+                              (x_max, y_max), (0, 255, 0), 1)
+                gaze_class = classify_gaze(
+                    x_min, y_min, bbox_width, bbox_height, frame, pitch_predicted_[-1], yaw_predicted_[-1], filename)
             else:
                 # No face detected, pitch, jaw annotated with 42, 42 to specify that
                 pitch_predicted_.append(NOFACE)
                 yaw_predicted_.append(NOFACE)
-                gaze_class = classify_gaze(0, 0, 0, 0, frame, pitch_predicted_[-1], yaw_predicted_[-1])
+                gaze_class = classify_gaze(
+                    0, 0, 0, 0, frame, pitch_predicted_[-1], yaw_predicted_[-1], filename)
 
-            
             gaze_class_.append(gaze_class)
+            #store img
+
             myFPS = 1.0 / (time.time() - start_fps)
             # cv2.putText(frame, 'FPS: {:.1f}'.format(
             #     myFPS), (10, 20), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 1, cv2.LINE_AA)
@@ -323,3 +307,60 @@ if __name__ == '__main__':
                 [np.array(pitch_predicted_, ndmin=2), np.array(yaw_predicted_, ndmin=2), np.array(gaze_class_, ndmin=2)]).T,
             columns=["yaw", "pitch", 'class'])
         dataframe.to_csv('../pitchjaw/'+filename+'.csv', index=False)
+
+
+if __name__ == '__main__':
+    print(line_intersect(-10, -5, 50, 50, 0, 0, 480, 0))
+    args = parse_args()
+
+    cudnn.enabled = True
+    arch = args.arch
+    batch_size = 1
+    # cam = args.cam_id
+    gpu = select_device(args.gpu_id, batch_size=batch_size)
+    snapshot_path = args.snapshot
+
+    transformations = transforms.Compose([
+        transforms.Resize(448),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+    ])
+
+    model = getArch(arch, 90)
+    print('Loading snapshot.')
+    saved_state_dict = torch.load(snapshot_path)
+    model.load_state_dict(saved_state_dict)
+    model.cuda(gpu)
+    model.eval()
+
+    softmax = nn.Softmax(dim=1)
+    detector = RetinaFace(gpu_id=0)
+    idx_tensor = [idx for idx in range(90)]
+    idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
+    x = 0
+
+    # Call annotate function
+    filename = '33001_sessie3_taskrobotEngagement'
+    ext = '.MP4'
+    file = filename+ext
+    cap = cv2.VideoCapture('all_vids/visible_with_bounding_boxes/'+file)
+    annotate(model, softmax, detector, idx_tensor, cap, filename)
+
+    # root = './all_vids/visible_with_bounding_boxes/'
+    # for f in data['file']:
+    #     video = f+'.MP4'
+    #     print(root+video)
+    #     cap = cv2.VideoCapture(root+video)
+    #     if not cap.isOpened():
+    #         video = f+'.mp4'
+    #         cap = cv2.VideoCapture(root+video)
+    #         if not cap.isOpened():
+    #             raise IOError("Could not read the video file")
+            
+    #     annotate(model, softmax, detector, idx_tensor, cap, f)
+
+
+    

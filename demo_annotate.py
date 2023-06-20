@@ -34,8 +34,8 @@ from face_detection import RetinaFace
 from model import L2CS
 
 import pandas as pd
-from readbbtxt import readbbtxt
 import math
+from readbbtxt import readbbtxt
 
 import cv2
 
@@ -116,11 +116,11 @@ def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
     denominator = ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4))
 
     # Lines are parallel
-    if denominator == 0:  
+    if denominator == 0:
         return -1, -1
     px = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) / denominator
     py = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) / denominator
-    
+
     return int(px), int(py)
 
 
@@ -149,38 +149,41 @@ def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred, filename):
     if gazex < 0 or gazex > w or gazey < 0 or gazey > h:
         # Do line intersection to find at which point the gaze vector line
         # leaves the image.
-        
+
         # top, right, bottom, left vector line of image boundaries
         x1, y1 = pos[0], pos[1]
         x2, y2 = gazex, gazey
         lines = [(0, 0, w, 0), (w, 0, w, h), (0, h, w, h), (0, 0, 0, h)]
 
+        min_dist = float('inf')
         for x3, y3, x4, y4 in lines:
-            gazextemp, gazeytemp = line_intersect(x1, y1, x2, y2, x3, y3, x4, y4)
-            if 0 < gazextemp < w and 0 < gazeytemp < h:
-                gazex = gazextemp
-                gazey = gazeytemp
-                break
-
-        # x3, y3, x4, y4 = 0, 0, w, 0
-        # y3 = gazey if 0 <= gazey <= h else 0 if gazey < 0 else h
-        # y4 = y3
-        # x1, y1 = pos[0], pos[1]
-        # x2, y2 = gazex, gazey
-        # gazex, gazey = line_intersect(x1, y1, x2, y2, x3, y3, x4, y4)
+            gazextemp, gazeytemp = line_intersect(
+                x1, y1, x2, y2, x3, y3, x4, y4)
+            if (0 <= gazextemp <= w) and (0 <= gazeytemp <= h):
+                # line intersections do not discriminate fordirection of the vector. The boundary with the smallest distance is the true intersection where
+                # the gaze vector leaves the image
+                dist = math.sqrt((x2-gazextemp)**2+(y2-gazeytemp)**2)
+                min_dist = dist if dist < min_dist else min_dist
+                if dist == min_dist:
+                    gazex = gazextemp
+                    gazey = gazeytemp
+                    # print(x1, y1, x2, y2, x3, y3, x4, y4)
 
     rec = data[data['file'] == filename].iloc[0]
+
     # Check small objects first because if e.g. tablet bb intersects with bb of robot and gaze is towards the parts of intersection, changes are higher the child is indeed looking at the
     # smaller bb, thus the tablet.
 
-    if inbb(int(rec['tl_tablet_x']*w), int(rec['tl_tablet_y']*h), int(rec['br_tablet_x']*w), int(rec['br_tablet_y']*h), gazex, gazey):
-        return 2
-    elif inbb(int(rec['tl_pp_x']*w), int(rec['tl_pp_y']*h), int(rec['br_pp_x']*w), int(rec['br_pp_y']*h), gazex, gazey):
-        return 0
-    elif inbb(int(rec['tl_robot_x']*w), int(rec['tl_robot_y']*h), int(rec['br_robot_x']*w), int(rec['br_robot_y']*h), gazex, gazey):
-        return 1
-    else:
-        return 3
+    return_val = 3
+    if inbb(round(rec['tl_tablet_x']*w), round(rec['tl_tablet_y']*h), round(rec['br_tablet_x']*w), round(rec['br_tablet_y']*h), gazex, gazey):
+        return_val = 2
+    elif inbb(round(rec['tl_pp_x']*w), round(rec['tl_pp_y']*h), round(rec['br_pp_x']*w), round(rec['br_pp_y']*h), gazex, gazey):
+        return_val = 0
+    elif inbb(round(rec['tl_robot_x']*w), round(rec['tl_robot_y']*h), round(rec['br_robot_x']*w), round(rec['br_robot_y']*h), gazex, gazey):
+        return_val = 1
+
+    # print(w, w, h, get_classname(return_val), gazex, gazey,round(rec['tl_tablet_x']*w), round(rec['tl_tablet_y']*h), round(rec['br_tablet_x']*w), round(rec['br_tablet_y']*h))
+    return return_val
 
 
 def get_largest_face(faces):
@@ -287,7 +290,7 @@ def annotate(model, softmax, detector, idx_tensor, cap, filename):
                     0, 0, 0, 0, frame, pitch_predicted_[-1], yaw_predicted_[-1], filename)
 
             gaze_class_.append(gaze_class)
-            #store img
+            # store img
 
             myFPS = 1.0 / (time.time() - start_fps)
             # cv2.putText(frame, 'FPS: {:.1f}'.format(
@@ -300,7 +303,7 @@ def annotate(model, softmax, detector, idx_tensor, cap, filename):
                 break
 
             # from time import sleep
-            # sleep(0.2)
+            # sleep(0.5)
 
         dataframe = pd.DataFrame(
             data=np.concatenate(
@@ -310,7 +313,6 @@ def annotate(model, softmax, detector, idx_tensor, cap, filename):
 
 
 if __name__ == '__main__':
-    print(line_intersect(-10, -5, 50, 50, 0, 0, 480, 0))
     args = parse_args()
 
     cudnn.enabled = True
@@ -343,24 +345,21 @@ if __name__ == '__main__':
     x = 0
 
     # Call annotate function
-    filename = '33001_sessie3_taskrobotEngagement'
-    ext = '.MP4'
-    file = filename+ext
-    cap = cv2.VideoCapture('all_vids/visible_with_bounding_boxes/'+file)
-    annotate(model, softmax, detector, idx_tensor, cap, filename)
+    # filename = '33001_sessie3_taskrobotEngagement'
+    # ext = '.MP4'
+    # file = filename+ext
+    # cap = cv2.VideoCapture('all_vids/visible_with_bounding_boxes/'+file)
+    # annotate(model, softmax, detector, idx_tensor, cap, filename)
 
-    # root = './all_vids/visible_with_bounding_boxes/'
-    # for f in data['file']:
-    #     video = f+'.MP4'
-    #     print(root+video)
-    #     cap = cv2.VideoCapture(root+video)
-    #     if not cap.isOpened():
-    #         video = f+'.mp4'
-    #         cap = cv2.VideoCapture(root+video)
-    #         if not cap.isOpened():
-    #             raise IOError("Could not read the video file")
-            
-    #     annotate(model, softmax, detector, idx_tensor, cap, f)
+    root = '../all_vids/visible_with_bounding_boxes/'
+    for f in data['file']:
+        video = f+'.MP4'
+        print(root+video)
+        cap = cv2.VideoCapture(root+video)
+        if not cap.isOpened():
+            video = f+'.mp4'
+            cap = cv2.VideoCapture(root+video)
+            if not cap.isOpened():
+                raise IOError("Could not read the video file")
 
-
-    
+        annotate(model, softmax, detector, idx_tensor, cap, f)

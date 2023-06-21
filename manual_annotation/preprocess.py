@@ -119,13 +119,13 @@ annotations.to_csv('annotations_formatted_gaps_removed.csv')
 annotations_double.to_csv('annotations_double_formatted_gaps_removed.csv')
 
 def get_frame_level_data(ann, files=None):
-    res = pd.DataFrame(columns=['file', 'case', 'framenumber', 'class']) 
+    res = pd.DataFrame(columns=['file', 'annotator', 'case', 'framenumber', 'class']) 
 
     files = ann['file'].unique() if files is None else files
     for f in files:
         begins = ann[ann['file'] == f][['begin', 'class']]
         fcase = list(ann[ann['file'] == f]['case'])[0]
-        print(fcase)
+        annotator = list(ann[ann['file'] == f]['annotator'])[0]
         begins = begins.reset_index()
         stat = vidstat[vidstat['file'] == f][['frames', 'rate']]
         begin_list = list(begins['begin'])
@@ -143,7 +143,7 @@ def get_frame_level_data(ann, files=None):
 
         for start, end, gazeclass in newr:
             for i in range(start, end):
-                res.loc[len(res)] = [f, fcase, i, int(gazeclass)]
+                res.loc[len(res)] = [f, annotator, fcase, i, int(gazeclass)]
         
         print(f)
         for i in list(range(int(stat['frames']))):

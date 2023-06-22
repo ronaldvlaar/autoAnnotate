@@ -15,11 +15,16 @@ df.to_csv('annotations.csv', index=False)
 
 #double
 double_files = ['double/'+n+'/elan_annotations_double.csv' for n in annotators]
+# add extra annotations
+for n in annotators:
+    double_files.append('double/'+n+'/elan_annotations_extra.csv') 
+
 df2 = pd.DataFrame()
 for f in double_files:
     data = pd.read_csv(f, names=cols)
     data['annotator'] = [f.split('/')[1] for _ in range(len(data))]
     df2 = pd.concat([df2, data], axis=0)
+
 
 # df2.columns = cols
 df2.to_csv('annotations_double.csv', index=False)

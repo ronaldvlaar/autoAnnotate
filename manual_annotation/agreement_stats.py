@@ -49,3 +49,24 @@ print()
 print('Lin annotates:')
 for i in nextannotations_lin:
     print (i)
+
+
+print('Files Lin selected from initial annotation for triple annotation')
+print('Initial annotation from')
+namecountRonaldfirst = len(dfcw4[dfcw4['annotator']=='Ronald']['file'].unique())
+namecountDaenfirst = len(dfcw4[dfcw4['annotator']=='Daen']['file'].unique())
+namecountLinfirst = len((dfcw4[dfcw4['annotator']=='Lin']['file'].unique()))
+namecountRonaldsecond = len(dfcw4[dfcw4['2ndannotator']=='Ronald']['file'].unique())
+namecountDaensecond = len(dfcw4[dfcw4['2ndannotator']=='Daen']['file'].unique())
+namecountLinsecond = len((dfcw4[dfcw4['2ndannotator']=='Lin']['file'].unique()))
+
+print('Ronald:', namecountRonaldfirst)
+print('Daen:',  namecountRonaldfirst)
+print('Lin:', namecountLinfirst)
+
+
+
+print(namecountRonaldfirst+namecountRonaldsecond)
+print(namecountDaenfirst+namecountDaensecond)
+print(namecountLinfirst+namecountLinsecond)
+

@@ -11,6 +11,7 @@ To run the script:
 python demo_annotate.py \
  --snapshot models/L2CSNet_gaze360.pkl \
  --gpu 0
+ --extendgaze 1
 """
 
 import argparse
@@ -65,6 +66,9 @@ def parse_args():
     parser.add_argument(
         '--arch', dest='arch', help='Network architecture, can be: ResNet18, ResNet34, ResNet50, ResNet101, ResNet152',
         default='ResNet50', type=str)
+    parser.add_argument(
+        '--extendgaze', dest='extendgaze', help='Set to 1 if gaze should be extended to a line pointing out of the scene to see if it intersects with a bounding box along the way',
+        default=1, type=int)
 
     args = parser.parse_args()
     return args
@@ -105,12 +109,11 @@ def get_classname(id):
         return 'unknown'
 
 
-# https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
-
 def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
     """
     Returns the coordinates px, py. p is the intersection of the lines
     defined by ((x1, y1), (x2, y2)) and ((x3, y3), (x4, y4))
+    https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
     """
 
     denominator = ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4))
@@ -124,7 +127,35 @@ def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
     return int(px), int(py)
 
 
-def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred, filename):
+def extgaze(pos, gazex, gazey, tlx, tly, brx, bry):
+    """
+    get minimal intersection distance of the gaze line with the bounding boxs specified by tlx, tly, brx, bry.
+    Distance is infinity if there is no intersection
+    """
+    x1, y1 = pos[0], pos[1]
+    x2, y2 = gazex, gazey
+
+    # left top right bottom border lines of the bounding box
+    lines = [(tlx, 0, tlx, tly), (tlx, tly, brx, bry),
+             (brx, 0, brx, bry), (tlx, 0, tly, 0)]
+
+    min_dist = float('inf')
+    for x3, y3, x4, y4 in lines:
+        xtemp, ytemp = line_intersect(x1, y1, x2, y2, x3, y3, x4, y4)
+        if (tlx <= xtemp <= brx) and (tly <= ytemp <= bry):
+            # line intersections do not discriminate fordirection of the vector. The boundary with the smallest distance is the true intersection where
+            # the gaze vector leaves the image
+            dist = math.sqrt((x2-xtemp)**2+(y2-ytemp)**2)
+            min_dist = dist if dist < min_dist else min_dist
+            if dist == min_dist:
+                gazex = xtemp
+                gazey = ytemp
+                # print(x1, y1, x2, y2, x3, y3, x4, y4)
+
+    return min_dist
+
+
+def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred, filename, args):
     """
     returns 
     0 : pen & paper
@@ -142,8 +173,8 @@ def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred, filename):
     pos = (int(a+c / 2.0), int(b+d / 2.0))
     dx = -length * np.sin(pitch_pred) * np.cos(jaw_pred)
     dy = -length * np.sin(jaw_pred)
-    gazex = round(pos[0] + dx)
-    gazey = round(pos[1] + dy)
+    gazex_init, gazey_init = round(pos[0] + dx), round(pos[1] + dy)
+    gazex, gazey = gazex_init, gazey_init
 
     # Check if gaze vector leaves the image
     if gazex < 0 or gazex > w or gazey < 0 or gazey > h:
@@ -176,11 +207,26 @@ def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred, filename):
 
     return_val = 3
     if inbb(round(rec['tl_tablet_x']*w), round(rec['tl_tablet_y']*h), round(rec['br_tablet_x']*w), round(rec['br_tablet_y']*h), gazex, gazey):
-        return_val = 2
+        return 2
     elif inbb(round(rec['tl_pp_x']*w), round(rec['tl_pp_y']*h), round(rec['br_pp_x']*w), round(rec['br_pp_y']*h), gazex, gazey):
-        return_val = 0
+        return 0
     elif inbb(round(rec['tl_robot_x']*w), round(rec['tl_robot_y']*h), round(rec['br_robot_x']*w), round(rec['br_robot_y']*h), gazex, gazey):
-        return_val = 1
+        return 1
+
+    # No gaze into the objects bb. Extend the gaze to see if there is intersection
+    # perform line intersection if args.extendgaze!=0
+    if args.extendgaze:
+        # intersection distances (infinity if no intersection) with the bounding boxes of the objects
+        intersect_distances = [(2, extgaze(pos, gazex_init, gazey_init, round(rec['tl_tablet_x']*w), round(rec['tl_tablet_y']*h), round(rec['br_tablet_x']*w), round(rec['br_tablet_y'])*h)),
+                               (0, extgaze(pos, gazex_init, gazey_init, round(rec['tl_pp_x']*w), round(
+                                   rec['tl_pp_y']*h), round(rec['br_pp_x']*w), round(rec['br_pp_y'])*h)),
+                               (1, extgaze(pos, gazex_init, gazey_init, round(rec['tl_robot_x']*w), round(rec['tl_robot_y']*h), round(rec['br_robot_x']*w), round(rec['br_robot_y'])*h))]
+
+        intersect_distances.sort(key=lambda x: x[1])
+        smallest_distance = intersect_distances[0][1]
+        object_class = intersect_distances[0][0]
+        if smallest_distance < float('inf'):
+            return object_class
 
     # print(w, w, h, get_classname(return_val), gazex, gazey,round(rec['tl_tablet_x']*w), round(rec['tl_tablet_y']*h), round(rec['br_tablet_x']*w), round(rec['br_tablet_y']*h))
     return return_val
@@ -213,14 +259,27 @@ def get_largest_face(faces):
     return faces[largest_face_idx]
 
 
-def annotate(model, softmax, detector, idx_tensor, cap, filename):
+def annotate(model, softmax, detector, idx_tensor, cap, filename, args):
     # Check if the file is opened correctly
     if not cap.isOpened():
         raise IOError("Could not read the video file")
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    output = cv2.VideoWriter(
+        '../pitchjaw/vids_annotated/'+filename +
+        '.mp4', cv2.VideoWriter_fourcc(*'mp4v'),
+        fps, (width, height))
 
     pitch_predicted_ = []
     yaw_predicted_ = []
     gaze_class_ = []
+    fps_processed = []
+
+    headboxl = []
+    headboxt = []
+    headboxr = []
+    headboxb = []
 
     with torch.no_grad():
         while True:
@@ -276,39 +335,52 @@ def annotate(model, softmax, detector, idx_tensor, cap, filename):
                 pitch_predicted_.append(pitch_predicted)
                 yaw_predicted_.append(yaw_predicted)
 
-                draw_gaze(x_min, y_min, bbox_width, bbox_height, frame,
-                          (pitch_predicted, yaw_predicted), color=(0, 0, 255))
+                out_frame = draw_gaze(x_min, y_min, bbox_width, bbox_height, frame,
+                                      (pitch_predicted, yaw_predicted), color=(0, 0, 255))
                 cv2.rectangle(frame, (x_min, y_min),
                               (x_max, y_max), (0, 255, 0), 1)
                 gaze_class = classify_gaze(
-                    x_min, y_min, bbox_width, bbox_height, frame, pitch_predicted_[-1], yaw_predicted_[-1], filename)
+                    x_min, y_min, bbox_width, bbox_height, frame, pitch_predicted_[-1], yaw_predicted_[-1], filename, args)
+                headboxl.append(box[0])
+                headboxt.append(box[1])
+                headboxr.append(box[2])
+                headboxb.append(box[3])
+
             else:
+                out_frame = frame
                 # No face detected, pitch, jaw annotated with 42, 42 to specify that
                 pitch_predicted_.append(NOFACE)
                 yaw_predicted_.append(NOFACE)
                 gaze_class = classify_gaze(
-                    0, 0, 0, 0, frame, pitch_predicted_[-1], yaw_predicted_[-1], filename)
+                    0, 0, 0, 0, frame, pitch_predicted_[-1], yaw_predicted_[-1], filename, args)
+                headboxl.append(-1)
+                headboxt.append(-1)
+                headboxr.append(-1)
+                headboxb.append(-1)
 
             gaze_class_.append(gaze_class)
             # store img
 
             myFPS = 1.0 / (time.time() - start_fps)
+            fps_processed.append(myFPS)
             # cv2.putText(frame, 'FPS: {:.1f}'.format(
             #     myFPS), (10, 20), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 1, cv2.LINE_AA)
             cv2.putText(frame, '{} (class {})'.format(
                 get_classname(gaze_class), gaze_class), (10, 20), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 1, cv2.LINE_AA)
 
-            cv2.imshow("Demo", frame)
-            if cv2.waitKey(1) & 0xFF == 27:
-                break
+            output.write(out_frame)
+            # cv2.imshow("Demo", frame)
+            # if cv2.waitKey(1) & 0xFF == 27:
+            #     break
 
             # from time import sleep
             # sleep(0.5)
 
         dataframe = pd.DataFrame(
             data=np.concatenate(
-                [np.array(pitch_predicted_, ndmin=2), np.array(yaw_predicted_, ndmin=2), np.array(gaze_class_, ndmin=2)]).T,
-            columns=["yaw", "pitch", 'class'])
+                [np.array(pitch_predicted_, ndmin=2), np.array(yaw_predicted_, ndmin=2), np.array(gaze_class_, ndmin=2), np.array(fps_processed, ndmin=2),
+                 np.array(headboxl, ndmin=2),np.array(headboxt, ndmin=2),np.array(headboxr, ndmin=2),np.array(headboxb, ndmin=2)]).T,
+            columns=['yaw', 'pitch', 'class', 'fps', 'hleft', 'htop', 'hright', 'hbottom'])
         dataframe.to_csv('../pitchjaw/'+filename+'.csv', index=False)
 
 
@@ -348,8 +420,8 @@ if __name__ == '__main__':
     # filename = '33001_sessie3_taskrobotEngagement'
     # ext = '.MP4'
     # file = filename+ext
-    # cap = cv2.VideoCapture('all_vids/visible_with_bounding_boxes/'+file)
-    # annotate(model, softmax, detector, idx_tensor, cap, filename)
+    # cap = cv2.VideoCapture('../all_vids/visible_with_bounding_boxes/'+file)
+    # annotate(model, softmax, detector, idx_tensor, cap, filename, args)
 
     root = '../all_vids/visible_with_bounding_boxes/'
     for f in data['file']:
@@ -362,4 +434,24 @@ if __name__ == '__main__':
             if not cap.isOpened():
                 raise IOError("Could not read the video file")
 
-        annotate(model, softmax, detector, idx_tensor, cap, f)
+        annotate(model, softmax, detector, idx_tensor, cap, f, args)
+
+    datafolder = '../data_fin/'
+    datafile = 'pixel_position_invis_new.txt'
+
+    data = readbbtxt(datafolder+datafile)
+    # remove .png extension from filenames
+    data['file'] = data['file'].apply(lambda x: x[:-4])
+
+    root = '../all_vids/invisible_with_bounding_boxes/'
+    for f in data['file']:
+        video = f+'.MP4'
+        print(root+video)
+        cap = cv2.VideoCapture(root+video)
+        if not cap.isOpened():
+            video = f+'.mp4'
+            cap = cv2.VideoCapture(root+video)
+            if not cap.isOpened():
+                raise IOError("Could not read the video file")
+
+        annotate(model, softmax, detector, idx_tensor, cap, f, args)

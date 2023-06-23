@@ -20,7 +20,7 @@ classes = list(range(0, 5))
 filename = '33001_sessie1_taskrobotEngagement.csv'
 
 
-def plot(filename):
+def plot(filename, xlabel=True, ylabel=True):
     df = pd.read_csv(filename)
     df['class'] = df['class'].astype(int)
     nr_frames = len(df.index)
@@ -47,9 +47,9 @@ def plot(filename):
     ax.set_ylim((0, 5))
     ax.set_xlim((0, nr_frames))
     ax.set_yticks([i+0.5 for i in classes])
-    ax.set_yticklabels([get_classname(i) for i in classes])
-    ax.set_ylabel('gazed upon object', fontsize=12)
-    ax.set_xlabel('frame', fontsize=12)
+    ax.set_yticklabels([get_classname(i) for i in classes]) if ylabel else None
+    ax.set_ylabel('gazed upon object', fontsize=12) if ylabel else None
+    ax.set_xlabel('frame', fontsize=12) if xlabel else None
     fig.tight_layout()
     plt.savefig(filename[:-4]+'_gaze.png', dpi=300)
     plt.close()

@@ -44,6 +44,6 @@ for f in annotations_double['file'].unique():
     
     # break
 
-print(np.array(fleiss).mean())
-print(np.array(krippen).mean())
-print(np.array(fleissw4).mean())
+print(np.array(fleiss).mean(), np.array(fleiss).min(), np.array(fleiss).max(), np.array(fleiss).std())
+print(np.array(krippen).mean(), np.array(krippen).min(), np.array(krippen).max(), np.array(krippen).std())
+print(np.array(fleissw4).mean(), np.array(fleissw4).min(), np.array(fleissw4).max(), np.array(fleissw4).std())

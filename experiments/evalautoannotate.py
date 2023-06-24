@@ -35,7 +35,6 @@ def eval(path):
         
         dfauto = pd.read_csv(path+f+'.csv')
         annauto = list(dfauto['class'].astype(int))
-        print(set(annauto))
 
         anns = np.array([ann, annauto])
         annst = anns.T
@@ -62,9 +61,25 @@ def eval(path):
 
 
 if __name__ == '__main__':
+    print('extend 1\nincl, excl class4')
     fs, cs, fsw4, csw4 = eval('./l2cs_extendgaze1/')
-    print(fs['kappa'].mean(), fsw4['kappa'].mean(), cs['kappa'].mean(), csw4['kappa'].mean())
+    print(cs['kappa'].mean(), csw4['kappa'].mean())
+    csv = cs[cs['case']=='visible']
+    csi = cs[cs['case']=='invisible']
+    csw4v = csw4[csw4['case']=='visible']
+    csw4i = csw4[csw4['case']=='invisible']
+    print(csv['kappa'].mean(), csw4v['kappa'].mean(), 'visible')
+    print(csi['kappa'].mean(), csw4i['kappa'].mean(), 'invisible')
+
+    print()
+    print('extend 0\nincl, excl class4')
 
     fs, cs, fsw4, csw4 = eval('./l2cs_extendgaze0/')
-    print(fs['kappa'].mean(), fsw4['kappa'].mean(), cs['kappa'].mean(), csw4['kappa'].mean())
+    print(cs['kappa'].mean(), csw4['kappa'].mean())
+    csv = cs[cs['case']=='visible']
+    csi = cs[cs['case']=='invisible']
+    csw4v = csw4[csw4['case']=='visible']
+    csw4i = csw4[csw4['case']=='invisible']
+    print(csv['kappa'].mean(), csw4v['kappa'].mean(), 'visible')
+    print(csi['kappa'].mean(), csw4i['kappa'].mean(), 'invisible')
     

@@ -56,8 +56,12 @@ def plot(filename, xlabel=True, ylabel=True):
 
 
 if __name__ == '__main__':
-    dir = '../manual_annotation/frame_files/'
-    files = [f for f in listdir(dir) if isfile(join(dir, f))]
+    #dir = '../manual_annotation/frame_files/'
+    dirs = ['../experiments/l2cs_extendgaze0/', '../experiments/l2cs_extendgaze1/']
+    # dir = '../aggregation/aggr/' 
+    for dir in dirs:
+        files = [f for f in listdir(dir) if isfile(join(dir, f))]
+        files = list(filter(lambda x: x[-3:] =='csv', files))
 
-    for f in files:
-        plot(dir+f)
+        for f in files:
+            plot(dir+f)

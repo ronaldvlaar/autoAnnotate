@@ -71,10 +71,33 @@ if __name__ == '__main__':
     print(csv['kappa'].mean(), csw4v['kappa'].mean(), 'visible')
     print(csi['kappa'].mean(), csw4i['kappa'].mean(), 'invisible')
 
+    print() 
+
+    print('aggregated extend 1\nincl, excl class4')
+    fs, cs, fsw4, csw4 = eval('../aggregation/aggr_l2csextendgaze1/')
+    print(cs['kappa'].mean(), csw4['kappa'].mean())
+    csv = cs[cs['case']=='visible']
+    csi = cs[cs['case']=='invisible']
+    csw4v = csw4[csw4['case']=='visible']
+    csw4i = csw4[csw4['case']=='invisible']
+    print(csv['kappa'].mean(), csw4v['kappa'].mean(), 'visible')
+    print(csi['kappa'].mean(), csw4i['kappa'].mean(), 'invisible')
+
     print()
+
     print('extend 0\nincl, excl class4')
 
     fs, cs, fsw4, csw4 = eval('./l2cs_extendgaze0/')
+    print(cs['kappa'].mean(), csw4['kappa'].mean())
+    csv = cs[cs['case']=='visible']
+    csi = cs[cs['case']=='invisible']
+    csw4v = csw4[csw4['case']=='visible']
+    csw4i = csw4[csw4['case']=='invisible']
+    print(csv['kappa'].mean(), csw4v['kappa'].mean(), 'visible')
+    print(csi['kappa'].mean(), csw4i['kappa'].mean(), 'invisible')
+    print('aggregated extend 0\nincl, excl class4')
+
+    fs, cs, fsw4, csw4 = eval('../aggregation/aggr_l2csextendgaze0/')
     print(cs['kappa'].mean(), csw4['kappa'].mean())
     csv = cs[cs['case']=='visible']
     csi = cs[cs['case']=='invisible']

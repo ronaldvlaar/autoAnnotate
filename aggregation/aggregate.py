@@ -19,6 +19,10 @@ def aggregateivt(threshold=20, min_fixation=2, dest='./aggr_l2csextendgaze0/',
     a fixations group the mode is chosen
     """
     # file = '33001_sessie1_taskrobotEngagement'
+    not_aggregated_ck = []
+    aggregated_ck = []
+    not_aggregated_ckw4 = []
+    aggregated_ckw4 = []
     annotations = pd.read_csv('../manual_annotation/annotations_frame.csv')
     vidstats = pd.read_csv('vidstat.csv')
     files = annotations['file'].unique() if files is None else files
@@ -103,10 +107,14 @@ def aggregateivt(threshold=20, min_fixation=2, dest='./aggr_l2csextendgaze0/',
         ckw4 = cohen_kappa_score(
             dat['class'].astype(int), ann, labels=[0, 1, 2, 3])
         print(ck, ckw4)
+        not_aggregated_ck.append(ck)
+        not_aggregated_ckw4.append(ckw4)
 
         ck = cohen_kappa_score(class_aggregated, ann, labels=[0, 1, 2, 3, 4])
         ckw4 = cohen_kappa_score(class_aggregated, ann, labels=[0, 1, 2, 3])
         print(ck, ckw4)
+        aggregated_ck.append(ck)
+        aggregated_ckw4.append(ckw4)
 
         dat['class'] = class_aggregated
 
@@ -128,7 +136,7 @@ def get_max_dispersion(points, w, h):
 
 
 def aggregatedti(threshold=2, min_fixation=2, dest='./aggr_l2csextendgaze0/',
-                 src='../experiments/l2cs_extendgaze0/', files=None):
+                 src='../experiments/l2cs_extendgaze0/', files=None, thresholds=None, getstats=True):
     """
     https://link.springer.com/content/pdf/10.3758/APP.71.4.881.pdf
     """
@@ -136,7 +144,16 @@ def aggregatedti(threshold=2, min_fixation=2, dest='./aggr_l2csextendgaze0/',
     annotations = pd.read_csv('../manual_annotation/annotations_frame.csv')
     vidstats = pd.read_csv('vidstat.csv')
     files = annotations['file'].unique() if files is None else files
-    for file in files:
+    not_aggregated_ck = []
+    aggregated_ck = []
+    not_aggregated_ckw4 = []
+    aggregated_ckw4 = []
+    dispersions_l = []
+    dispersions_avg = []
+
+    for idx, file in enumerate(files):
+        if thresholds is not None:
+            threshold = thresholds[idx]
         ann = annotations[annotations['file'] == file]['class']
         fps = int(vidstats[vidstats['file'] == file]['rate'].iloc[0])
         # tot_frames = vidstats[vidstats['file'] == file]['frames'].iloc[0]
@@ -147,6 +164,12 @@ def aggregatedti(threshold=2, min_fixation=2, dest='./aggr_l2csextendgaze0/',
         dat['class'] = dat['class'].astype(int)
 
         pointst = list(zip(dat['gazex'], dat['gazey']))
+
+        # maxgazex = int(dat['gazex'].abs().max())
+        # maxgazey = int(dat['gazey'].abs().max())
+
+        # w = maxgazex
+        # h = maxgazey
 
         points = []
         dispersions = []
@@ -193,13 +216,16 @@ def aggregatedti(threshold=2, min_fixation=2, dest='./aggr_l2csextendgaze0/',
 
         class_aggregated = []
         last_end = 0
-        print(fixations, max(dispersions), min(dispersions), sum(dispersions)/len(dispersions))
-        
+        # print(fixations, max(dispersions), min(dispersions),
+        #       sum(dispersions)/len(dispersions))
+
         for id, (start, end) in enumerate(fixations):
             for i in range(last_end, start):
                 mode = dat['class'].loc[i]
                 # mode = 4 if (start-last_end) < fps else mode
-                mode = 4 if (start-last_end) < 3*fps else stats.mode(dat['class'][last_end:start], keepdims=True)[0][0]
+                # mode = 4
+                # if (start-last_end) < min_fixation*fps else stats.mode(
+                #     dat['class'][last_end:start], keepdims=True)[0][0]
                 # mode = stats.mode(dat['class'][last_end:start], keepdims=True)[0][0] if (start-last_end) > 5*int(min_fixation*fps) else mode
                 class_aggregated.append(mode)
 
@@ -211,34 +237,164 @@ def aggregatedti(threshold=2, min_fixation=2, dest='./aggr_l2csextendgaze0/',
                 for i in range(end, len(dat['class'])):
                     mode = dat['class'].loc[i]
                     # mode = 4 if (len(dat['class'])-end) < fps else mode
-                    mode = 4 if (len(dat['class'])-end) < 3*fps else stats.mode(dat['class'][end:len(dat['class'])], keepdims=True)[0][0]
+                    # mode = 4
+                    # if (len(dat['class'])-end) < min_fixation*fps else stats.mode(
+                    #     dat['class'][end:len(dat['class'])], keepdims=True)[0][0]
                     # mode = stats.mode(dat['class'][end:len(dat['class'])], keepdims=True)[0][0] if (start-last_end) > 5*int(min_fixation*fps) else mode
                     class_aggregated.append(mode)
 
             last_end = end
         if len(fixations) == 0:
-            class_aggregated = dat['class']
+            class_aggregated = list(dat['class'])
+        # print(class_aggregated, ann, set(class_aggregated), set(ann))
 
-        ck = cohen_kappa_score(dat['class'].astype(
-            int), ann, labels=[0, 1, 2, 3, 4])
-        ckw4 = cohen_kappa_score(
-            dat['class'].astype(int), ann, labels=[0, 1, 2, 3])
-        print(ck, ckw4)
+        if getstats:
+            ck = cohen_kappa_score(dat['class'].astype(
+                int), ann, labels=[0, 1, 2, 3, 4])
+            ckw4 = cohen_kappa_score(
+                dat['class'].astype(int), ann, labels=[0, 1, 2, 3])
+            # print(ck, ckw4)
+            not_aggregated_ck.append(ck)
+            not_aggregated_ckw4.append(ckw4)
 
-        ck = cohen_kappa_score(class_aggregated, ann, labels=[0, 1, 2, 3, 4])
-        ckw4 = cohen_kappa_score(class_aggregated, ann, labels=[0, 1, 2, 3])
-        print(ck, ckw4)
+            ck = cohen_kappa_score(class_aggregated, ann,
+                                   labels=[0, 1, 2, 3, 4])
+            ckw4 = cohen_kappa_score(
+                class_aggregated, ann, labels=[0, 1, 2, 3])
+            # print(ck, ckw4)
+            # print()
+            aggregated_ck.append(ck)
+            aggregated_ckw4.append(ckw4)
+
+        dispersions_l.append(dispersions)
+        dispersions_avg.append(sum(dispersions)/len(dispersions))
 
         dat['class'] = class_aggregated
 
         dat.to_csv(dest+file+'.csv')
 
+    return np.array(aggregated_ck), np.array(not_aggregated_ck), np.array(aggregated_ckw4), np.array(not_aggregated_ckw4), dispersions_avg
+
+
+def smooth(window_len=24, dest='./aggr_l2csextendgaze0/',
+           src='../experiments/l2cs_extendgaze0/', files=None, getstats=True):
+    annotations = pd.read_csv('../manual_annotation/annotations_frame.csv')
+    vidstats = pd.read_csv('vidstat.csv')
+    files = annotations['file'].unique() if files is None else files
+    not_aggregated_ck = []
+    aggregated_ck = []
+    not_aggregated_ckw4 = []
+    aggregated_ckw4 = []
+
+    for _, file in enumerate(files):
+
+        ann = annotations[annotations['file'] == file]['class']
+        fps = int(vidstats[vidstats['file'] == file]['rate'].iloc[0])
+        # tot_frames = vidstats[vidstats['file'] == file]['frames'].iloc[0]
+        w = vidstats[vidstats['file'] == file]['width'].iloc[0]
+        h = vidstats[vidstats['file'] == file]['height'].iloc[0]
+        dat = pd.read_csv(src+file+'.csv')
+        dat = dat.reset_index()
+        dat['class'] = dat['class'].astype(int)
+        datt=list(dat['class'])
+        # window_len = int(fps)
+        most_freq_val = lambda x: stats.mode(x, keepdims=True)[0][0]
+        smoothed = [most_freq_val(datt[i:i+window_len]) for i in range(0,len(datt)-window_len+1)]
+        [smoothed.insert(0, most_freq_val(datt[0:window_len])) for _ in range(window_len-1)]
+            
+        class_aggregated = smoothed
+        if getstats:
+            ck = cohen_kappa_score(dat['class'].astype(
+                int), ann, labels=[0, 1, 2, 3, 4])
+            ckw4 = cohen_kappa_score(
+                dat['class'].astype(int), ann, labels=[0, 1, 2, 3])
+            # print(ck, ckw4)
+            not_aggregated_ck.append(ck)
+            not_aggregated_ckw4.append(ckw4)
+
+            ck = cohen_kappa_score(class_aggregated, ann,
+                                   labels=[0, 1, 2, 3, 4])
+            ckw4 = cohen_kappa_score(
+                class_aggregated, ann, labels=[0, 1, 2, 3])
+            # print(ck, ckw4)
+            # print()
+            aggregated_ck.append(ck)
+            aggregated_ckw4.append(ckw4)
+
+        # print(class_aggregated)
+        dat['class'] = class_aggregated
+        dat.to_csv(dest+file+'.csv')
+
+    return np.array(aggregated_ck), np.array(not_aggregated_ck), np.array(aggregated_ckw4), np.array(not_aggregated_ckw4)
+
 
 if __name__ == '__main__':
-    # aggregateivt(threshold=20, min_fixation=2, dest='./aggr_l2csextendgaze0/',
-    #           src='../experiments/l2cs_extendgaze0/')
-    aggregateivt(threshold=20, min_fixation=0.5, dest='./aggr/',
-                 src='', files=['33001_sessie1_taskrobotEngagement'])
+      # aggregateivt(threshold=20, min_fixation=0.5, dest='./aggr/',
+    #              src='', files=['33001_sessie1_taskrobotEngagement'])
 
-    aggregatedti(threshold=1/5, min_fixation=0.2, dest='./aggr/',
-                 src='', files=['33001_sessie1_taskrobotEngagement'])
+    # aggregatedti(threshold=1/5, min_fixation=0.2, dest='./aggr/',
+    #              src='', files=['33001_sessie1_taskrobotEngagement'])
+
+    # first learn average dispersions between every two frames
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_l2csextendgaze0/',
+                                                                                                            src='../experiments/l2cs_extendgaze0/', getstats=False)
+
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_l2csextendgaze0/',
+                                                                                              src='../experiments/l2cs_extendgaze0/', thresholds=dispersions_avg, getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    print()
+
+    # first learn average dispersions between every two frames
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_l2csextendgaze1/',
+                                                                                                            src='../experiments/l2cs_extendgaze1/', getstats=False)
+
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_l2csextendgaze1/',
+                                                                                              src='../experiments/l2cs_extendgaze1/', thresholds=dispersions_avg, getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    print()
+
+
+    # smoothing method
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=24, dest='./aggr_smooth0/', src='../experiments/l2cs_extendgaze0/', getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    print()
+
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=24, dest='./aggr_smooth1/', src='../experiments/l2cs_extendgaze1/', getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    print()
+
+    # smoothing method combined
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=3, dest='./aggr_l2csextendgaze0smoothed/', src='./aggr_l2csextendgaze0/', getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    print()
+
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=3, dest='./aggr_l2csextendgaze1smoothed/', src='./aggr_l2csextendgaze1/', getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+
+    print()
+    ###################################
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_l2csextendgaze0/',
+                                                                                                            src='./aggr_smooth0/', getstats=False)
+
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_l2csextendgaze0/',
+                                                                                              src='./aggr_smooth0/', thresholds=dispersions_avg, getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    print()
+
+    # first learn average dispersions between every two frames
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_l2csextendgaze1/',
+                                                                                                            src='./aggr_smooth1/', getstats=False)
+
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_l2csextendgaze1/',
+                                                                                              src='./aggr_smooth1/', thresholds=dispersions_avg, getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    print()
+

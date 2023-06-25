@@ -1,4 +1,3 @@
-
 # Inspired by https://towardsdatascience.com/inter-rater-agreement-kappas-69cd8b91ff75
 from sklearn.metrics import cohen_kappa_score
 import pandas as pd

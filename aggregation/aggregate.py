@@ -299,8 +299,15 @@ def smooth(window_len=24, dest='./aggr_l2csextendgaze0/',
         datt=list(dat['class'])
         # window_len = int(fps)
         most_freq_val = lambda x: stats.mode(x, keepdims=True)[0][0]
-        smoothed = [most_freq_val(datt[i:i+window_len]) for i in range(0,len(datt)-window_len+1)]
-        [smoothed.insert(0, most_freq_val(datt[0:window_len])) for _ in range(window_len-1)]
+        # smoothed = [most_freq_val(datt[i:i+window_len]) for i in range(0,len(datt)-window_len+1)]
+        # [smoothed.insert(0, most_freq_val(datt[0:window_len])) for _ in range(window_len-1)]
+        smoothed = [most_freq_val(datt[i:i+window_len]) for i in range(len(datt)-window_len+1)]
+        # print(len(datt), len(smoothed), len(datt)-len(smoothed))
+        # [smoothed.append(most_freq_val(datt[len(datt)-window_len:len(datt)])) for _ in range(len(datt)-len(smoothed))]
+
+        [smoothed.append(smoothed[-1]) for _ in range(window_len-1-int((window_len-1)/2))]
+        [smoothed.insert(0, smoothed[0]) for _ in range(int((window_len-1)/2))]
+        
             
         class_aggregated = smoothed
         if getstats:
@@ -336,6 +343,42 @@ if __name__ == '__main__':
     #              src='', files=['33001_sessie1_taskrobotEngagement'])
 
     # first learn average dispersions between every two frames
+
+
+    # smoothing method combined. First aggregation, then smoothing
+    # maxs0 = 24
+    # maxs1 = 24
+    # max_aggext0 = 0
+    # max_aggext1 = 0
+
+
+    # for s in range(3, 24*6, 3):
+    #     print('smoothing', s)
+    #     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=s, dest='./aggr_smooth0/', src='../experiments/l2cs_extendgaze0/', getstats=True)
+    #     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    #     print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    #     print()
+
+    #     if aggregated_ckw4.mean() > max_aggext0:
+    #         max_aggext0 = aggregated_ckw4.mean()
+    #         maxs0 = s
+
+    #     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=s, dest='./aggr_smooth1/', src='../experiments/l2cs_extendgaze1/', getstats=True)
+    #     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    #     print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    #     print()
+
+    #     if aggregated_ckw4.mean() > max_aggext1:
+    #         max_aggext1 = aggregated_ckw4.mean()
+    #         maxs1 = s
+            
+
+    # print(maxs0, maxs1, max_aggext0, max_aggext1)
+
+    
+
+
+    print('dti')
     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_l2csextendgaze0/',
                                                                                                             src='../experiments/l2cs_extendgaze0/', getstats=False)
 
@@ -357,6 +400,7 @@ if __name__ == '__main__':
 
 
     # smoothing method
+    print('smoothing')
     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=24, dest='./aggr_smooth0/', src='../experiments/l2cs_extendgaze0/', getstats=True)
     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
     print(aggregated_ck.mean(), aggregated_ckw4.mean())
@@ -367,32 +411,34 @@ if __name__ == '__main__':
     print(aggregated_ck.mean(), aggregated_ckw4.mean())
     print()
 
-    # smoothing method combined
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=3, dest='./aggr_l2csextendgaze0smoothed/', src='./aggr_l2csextendgaze0/', getstats=True)
+    # smoothing method combined. First aggregation, then smoothing
+    print('aggregation-smoothing')
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=24, dest='./aggr_l2csextendgaze0smoothed/', src='./aggr_l2csextendgaze0/', getstats=True)
     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
     print(aggregated_ck.mean(), aggregated_ckw4.mean())
     print()
 
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=3, dest='./aggr_l2csextendgaze1smoothed/', src='./aggr_l2csextendgaze1/', getstats=True)
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(window_len=24, dest='./aggr_l2csextendgaze1smoothed/', src='./aggr_l2csextendgaze1/', getstats=True)
     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
     print(aggregated_ck.mean(), aggregated_ckw4.mean())
 
     print()
-    ###################################
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_l2csextendgaze0/',
+
+    # first smoothing then aggregation
+    print('smoothing-aggregation')
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze0/',
                                                                                                             src='./aggr_smooth0/', getstats=False)
 
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_l2csextendgaze0/',
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze0/',
                                                                                               src='./aggr_smooth0/', thresholds=dispersions_avg, getstats=True)
     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
     print(aggregated_ck.mean(), aggregated_ckw4.mean())
     print()
 
-    # first learn average dispersions between every two frames
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_l2csextendgaze1/',
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze1/',
                                                                                                             src='./aggr_smooth1/', getstats=False)
 
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_l2csextendgaze1/',
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze1/',
                                                                                               src='./aggr_smooth1/', thresholds=dispersions_avg, getstats=True)
     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
     print(aggregated_ck.mean(), aggregated_ckw4.mean())

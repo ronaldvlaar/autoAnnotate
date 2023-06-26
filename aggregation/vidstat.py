@@ -14,7 +14,8 @@ datainvis = readbbtxt(datafolder+datafileinvis)
 # remove .png extension from filenames
 datainvis['file'] = datainvis['file'].apply(lambda x: x[:-4])
 
-ff = '{:.3f}'.format
+# ff = '{:.3f}'.format
+ff = lambda x : float('{:.3f}'.format(x))
 
 annotations = pd.read_csv(
     '../manual_annotation/annotations_formmatted_with_gaps.csv')
@@ -62,5 +63,10 @@ vidstatsinv, annotationsstat2 = get_stats(
     '../all_vids/invisible_with_bounding_boxes/', datainvis, case='invisible')
 vidstat = pd.concat([vidstatsvis, vidstatsinv], axis=0)
 annostat = pd.concat([annotationsstat1, annotationsstat2], axis=0)
+
 vidstat.to_csv('vidstat.csv')
 annostat.to_csv('annostat.csv')
+
+pd.set_option('display.float_format', lambda x: '%.2f' % x)
+vidstat.describe().to_csv('vidstatdes.csv')
+annostat.describe().to_csv('annotat.csv')

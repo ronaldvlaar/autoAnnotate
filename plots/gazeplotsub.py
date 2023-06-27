@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     files = list(filter(lambda x: '33007_sessie1' in x,files))
     print(files[0])
-    ax1= plot(dir+files[0], ax1, ylabel='gaze', title='Daen')
+    ax1= plot(dir+files[0], ax1, ylabel='gazed upon object', title='Daen')
     ax2 =plot(dir+files[2], ax2, xlabel='frame', title='Ronald')
     ax3=plot(dir+files[1], ax3, title='Lin')
     fig.tight_layout()

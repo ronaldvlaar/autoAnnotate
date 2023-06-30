@@ -58,12 +58,53 @@ if __name__ == '__main__':
     plt.rcParams['xtick.labelsize'] = 8
     plt.rcParams['ytick.labelsize'] = 8
     fig, (ax1, ax2, ax3) = plt.subplots(1,3, sharex=True, sharey=True, figsize=(6,3))
+    plt.clf()
+    # files = list(filter(lambda x: '33007_sessie1' in x,files))
+    # print(files[0])
+    # ax1= plot(dir+files[0], ax1, ylabel='gazed upon object', title='Daen')
+    # ax2 =plot(dir+files[2], ax2, xlabel='frame', title='Ronald')
+    # ax3=plot(dir+files[1], ax3, title='Lin')
+    # fig.tight_layout()
+    # plt.savefig('../manual_annotation/frame_files/'+'compgaze.png', dpi=300)
 
-    files = list(filter(lambda x: '33007_sessie1' in x,files))
+    plt.rcParams['xtick.labelsize'] = 8
+    plt.rcParams['ytick.labelsize'] = 8
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1,4, sharex=True, sharey=True, figsize=(6,3))
+
+
+    f = '33001_sessie1_taskrobotEngagement.csv'
+    files = ['../experiments/l2cs_extendgaze1/'+f, '../aggregation/aggr_smooth1/'+f, '../aggregation/aggr_l2csextendgaze1/'+f, '../manual_annotation/frame_files/'+f[:-4]+'Ronald.csv']
     print(files[0])
-    ax1= plot(dir+files[0], ax1, ylabel='gazed upon object', title='Daen')
-    ax2 =plot(dir+files[2], ax2, xlabel='frame', title='Ronald')
-    ax3=plot(dir+files[1], ax3, title='Lin')
+    ax1= plot(files[0], ax1, ylabel='gazed upon object', title='autoAnnotate (no aggregation)')
+    ax2 =plot(files[1], ax2, xlabel='', title='DTI')
+    ax3=plot(files[2], ax3, title='Smoothing')
+    ax4=plot(files[3], ax4, title='Manual-Ronald')
     fig.tight_layout()
-    plt.savefig('../manual_annotation/frame_files/'+'compgaze.png', dpi=300)
+    plt.savefig('../aggregation/plots/'+'aggregatecomp.png', dpi=2000)
 
+    # plt.rcParams['xtick.labelsize'] = 8
+    # plt.rcParams['ytick.labelsize'] = 8
+    # fig, (ax1, ax2) = plt.subplots(1,2, sharex=True, sharey=True, figsize=(6,3))
+
+
+    # f = '33001_sessie1_taskrobotEngagement.csv'
+    # files = ['../experiments/l2cs_extendgaze0/'+f, '../experiments/model4_extendgaze0/'+f]
+    # print(files[0])
+    # ax1= plot(files[0], ax1, ylabel='gazed upon object', title='L2CS')
+    # ax2 =plot(files[1], ax2, xlabel='', title='Baseline model')
+    # fig.tight_layout()
+    # plt.savefig('annl2csvsbaseline.png', dpi=300)
+
+    plt.clf()
+    plt.rcParams['xtick.labelsize'] = 8
+    plt.rcParams['ytick.labelsize'] = 8
+    fig, (ax1, ax2, ax3) = plt.subplots(1,3, sharex=True, sharey=True, figsize=(6,3))
+
+
+    f = '33001_sessie1_taskrobotEngagement.csv'
+    files = ['../experiments/l2cs_extendgaze0/'+f, '../experiments/model4_extendgaze0/'+f, '../manual_annotation/frame_files/'+f[:-4]+'Ronald.csv']
+    ax1= plot(files[0], ax1, ylabel='gazed upon object', title='L2CS')
+    ax2 =plot(files[1], ax2, xlabel='frame', title='Baseline model')
+    ax3 =plot(files[2], ax3, xlabel='', title='Manual-Ronald')
+    fig.tight_layout()
+    plt.savefig('annl2csvsbaseline.png', dpi=2000)

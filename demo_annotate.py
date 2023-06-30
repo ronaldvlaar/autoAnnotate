@@ -2,7 +2,7 @@
 Author: Ronald Vlaar
 Based on: https://github.com/Ahmednull/L2CS-Net
 
-Outputs gaze annotation and classification for a video recording and saves it to the pitchjaw folder
+Outputs gaze annotation and classification for a video recording.
 
 File should be placed the L2CS main folder which may be downloaded from https://github.com/Ahmednull/L2CS-Net
 
@@ -69,6 +69,8 @@ def parse_args():
     parser.add_argument(
         '--extendgaze', dest='extendgaze', help='Set to 1 if gaze should be extended to a line pointing out of the scene to see if it intersects with a bounding box along the way',
         default=1, type=int)
+    parser.add_argument('--dest', dest='dest',
+                        help='destination folder', default='../pitchjaw/', type=str)
 
     args = parser.parse_args()
     return args
@@ -153,6 +155,17 @@ def extgaze(pos, gazex, gazey, tlx, tly, brx, bry):
                 # print(x1, y1, x2, y2, x3, y3, x4, y4)
 
     return min_dist
+
+
+def get_gazexy(a, b, c, d, image_in, pitch_pred, jaw_pred):
+    (h, w) = image_in.shape[:2]
+    length = w/2
+    pos = (int(a+c / 2.0), int(b+d / 2.0))
+    dx = -length * np.sin(pitch_pred) * np.cos(jaw_pred)
+    dy = -length * np.sin(jaw_pred)
+    gazex_init, gazey_init = round(pos[0] + dx), round(pos[1] + dy)
+
+    return gazex_init, gazey_init
 
 
 def classify_gaze(a, b, c, d, image_in, pitch_pred, jaw_pred, filename, args):
@@ -267,7 +280,7 @@ def annotate(model, softmax, detector, idx_tensor, cap, filename, args):
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     output = cv2.VideoWriter(
-        '../pitchjaw/vids_annotated/'+filename +
+        args.dest+'vids_annotated/'+filename +
         '.mp4', cv2.VideoWriter_fourcc(*'mp4v'),
         fps, (width, height))
 
@@ -280,6 +293,8 @@ def annotate(model, softmax, detector, idx_tensor, cap, filename, args):
     headboxt = []
     headboxr = []
     headboxb = []
+    xs = []
+    ys = []
 
     with torch.no_grad():
         while True:
@@ -341,8 +356,12 @@ def annotate(model, softmax, detector, idx_tensor, cap, filename, args):
                               (x_max, y_max), (0, 255, 0), 1)
                 gaze_class = classify_gaze(
                     x_min, y_min, bbox_width, bbox_height, frame, pitch_predicted_[-1], yaw_predicted_[-1], filename, args)
-                headboxl.append(box[0])
-                headboxt.append(box[1])
+                x, y = get_gazexy(x_min, y_min, bbox_width, bbox_height,
+                                  frame, pitch_predicted_[-1], yaw_predicted_[-1])
+                xs.append(x)
+                ys.append(y)
+                headboxl.append(x_min)
+                headboxt.append(y_min)
                 headboxr.append(box[2])
                 headboxb.append(box[3])
 
@@ -351,6 +370,8 @@ def annotate(model, softmax, detector, idx_tensor, cap, filename, args):
                 # No face detected, pitch, jaw annotated with 42, 42 to specify that
                 pitch_predicted_.append(NOFACE)
                 yaw_predicted_.append(NOFACE)
+                xs.append(-1)
+                ys.append(-1)
                 gaze_class = classify_gaze(
                     0, 0, 0, 0, frame, pitch_predicted_[-1], yaw_predicted_[-1], filename, args)
                 headboxl.append(-1)
@@ -379,9 +400,9 @@ def annotate(model, softmax, detector, idx_tensor, cap, filename, args):
         dataframe = pd.DataFrame(
             data=np.concatenate(
                 [np.array(pitch_predicted_, ndmin=2), np.array(yaw_predicted_, ndmin=2), np.array(gaze_class_, ndmin=2), np.array(fps_processed, ndmin=2),
-                 np.array(headboxl, ndmin=2),np.array(headboxt, ndmin=2),np.array(headboxr, ndmin=2),np.array(headboxb, ndmin=2)]).T,
-            columns=['yaw', 'pitch', 'class', 'fps', 'hleft', 'htop', 'hright', 'hbottom'])
-        dataframe.to_csv('../pitchjaw/'+filename+'.csv', index=False)
+                 np.array(headboxl, ndmin=2), np.array(headboxt, ndmin=2), np.array(headboxr, ndmin=2), np.array(headboxb, ndmin=2), np.array(xs, ndmin=2), np.array(ys, ndmin=2)]).T,
+            columns=['yaw', 'pitch', 'class', 'fps', 'hleft', 'htop', 'hright', 'hbottom', 'gazex', 'gazey'])
+        dataframe.to_csv(args.dest+filename+'.csv', index=False)
 
 
 if __name__ == '__main__':

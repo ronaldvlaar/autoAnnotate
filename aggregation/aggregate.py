@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.metrics import cohen_kappa_score
 from scipy import stats
 from readbbtxt import readbbtxt
+import matplotlib.pyplot as plt
 
 datafolder = '../data_fin/'
 datafilevis = 'pixel_position_vis.txt'
@@ -362,6 +363,60 @@ if __name__ == '__main__':
     # annotations = pd.read_csv('../manual_annotation/annotations_frame.csv')
     # filesvis = annotations[annotations['case'] =='invisible']['file'].unique()
 
+    # print('find optimal smoothing')
+    # maxs0 = 0
+    # maxs1 = 0
+    # max_aggext0 = 0
+    # max_aggext1 = 0
+
+    # ss = list(range(3, 80))
+    # valsextdgaze0 = []
+    # valsw4extdgaze0 = []
+    # valsextdgaze1 = []
+    # valsw4extdgaze1 = []
+    # for s in ss:
+    #     print('smoothing', s)
+    #     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
+    #         window_len=s, dest='./aggr_smooth0/', src='../experiments/l2cs_extendgaze0/', getstats=True)
+    #     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    #     print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    #     print()
+
+    #     valsextdgaze0.append(np.array(aggregated_ck).mean())
+    #     valsw4extdgaze0.append(np.array(aggregated_ckw4).mean())
+
+    #     if aggregated_ckw4.mean() > max_aggext0:
+    #         max_aggext0 = aggregated_ckw4.mean()
+    #         maxs0 = s
+
+    #     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
+    #         window_len=s, dest='./aggr_smooth1/', src='../experiments/l2cs_extendgaze1/', getstats=True)
+    #     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    #     print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    #     print()
+
+    #     valsextdgaze1.append(np.array(aggregated_ck).mean())
+    #     valsw4extdgaze1.append(np.array(aggregated_ckw4).mean())
+
+    #     if aggregated_ckw4.mean() > max_aggext1:
+    #         max_aggext1 = aggregated_ckw4.mean()
+    #         maxs1 = s
+
+    # print(maxs0, maxs1, max_aggext0, max_aggext1)
+    # plt.rcParams["figure.figsize"] = (6,4)
+    # plt.title('Optimizing smoothing aggregation L2CS')
+    # plt.xlabel('windowsize', fontsize=14)
+    # plt.ylabel(r'$\bar{\kappa}$', fontsize=14)
+    # plt.scatter(ss, valsextdgaze0, s=15)
+    # plt.scatter(ss, valsw4extdgaze0, s=15)
+    # plt.scatter(ss, valsextdgaze1, s=15)
+    # plt.scatter(ss, valsw4extdgaze1, s=15)
+    # plt.legend(['class 4 incl. extendgaze disabled', 'class 4 excl. extendgaze disabled', 'class 4 incl. extendgaze enabled', 'class 4 excl. extendgaze enabled'])
+    # plt.savefig('smoothwindow.png', dpi=600)
+    # plt.clf()
+    # print(maxs0, maxs1)
+
+
     print('dti')
     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_l2csextendgaze0/',
                                                                                                             src='../experiments/l2cs_extendgaze0/', getstats=False)
@@ -385,78 +440,140 @@ if __name__ == '__main__':
     # smoothing method
     print('smoothing')
     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
-        window_len=40, dest='./aggr_smooth0/', src='../experiments/l2cs_extendgaze0/', getstats=True)
+        window_len=47, dest='./aggr_smooth0/', src='../experiments/l2cs_extendgaze0/', getstats=True)
     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
     print(aggregated_ck.mean(), aggregated_ckw4.mean())
     print()
 
     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
-        window_len=40, dest='./aggr_smooth1/', src='../experiments/l2cs_extendgaze1/', getstats=True)
+        window_len=39, dest='./aggr_smooth1/', src='../experiments/l2cs_extendgaze1/', getstats=True)
     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
     print(aggregated_ck.mean(), aggregated_ckw4.mean())
     print()
 
-    # smoothing method combined. First aggregation, then smoothing
-    print('aggregation-smoothing')
+
+    print()
+    ####################################################
+    # m4 
+    ####################################################
+    print('find optimal smoothing for baseline model')
+    # maxs0 = 0
+    # maxs1 = 0
+    # max_aggext0 = 0
+    # max_aggext1 = 0
+
+    # ss = list(range(3, 80))
+    # valsextdgaze0 = []
+    # valsw4extdgaze0 = []
+    # valsextdgaze1 = []
+    # valsw4extdgaze1 = []
+    # for s in ss:
+    #     print('smoothing', s)
+    #     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
+    #         window_len=s, dest='./aggr_m4smooth0/', src='../experiments/model4_extendgaze0/', getstats=True)
+    #     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    #     print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    #     print()
+
+    #     valsextdgaze0.append(np.array(aggregated_ck).mean())
+    #     valsw4extdgaze0.append(np.array(aggregated_ckw4).mean())
+
+    #     if aggregated_ckw4.mean() > max_aggext0:
+    #         max_aggext0 = aggregated_ckw4.mean()
+    #         maxs0 = s
+
+    #     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
+    #         window_len=s, dest='./aggr_m4smooth1/', src='../experiments/model4_extendgaze1/', getstats=True)
+    #     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    #     print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    #     print()
+
+    #     valsextdgaze1.append(np.array(aggregated_ck).mean())
+    #     valsw4extdgaze1.append(np.array(aggregated_ckw4).mean())
+
+    #     if aggregated_ckw4.mean() > max_aggext1:
+    #         max_aggext1 = aggregated_ckw4.mean()
+    #         maxs1 = s
+
+    # print(maxs0, maxs1, max_aggext0, max_aggext1)
+    # plt.rcParams["figure.figsize"] = (6,4)
+    # plt.title('Optimizing smoothing aggregation baseline model')
+    # plt.xlabel('windowsize', fontsize=14)
+    # plt.ylabel(r'$\bar{\kappa}$', fontsize=14)
+    # plt.scatter(ss, valsextdgaze0, s=15)
+    # plt.scatter(ss, valsw4extdgaze0, s=15)
+    # plt.scatter(ss, valsextdgaze1, s=15)
+    # plt.scatter(ss, valsw4extdgaze1, s=15)
+    # plt.legend(['class 4 incl. extendgaze disabled', 'class 4 excl. extendgaze disabled', 'class 4 incl. extendgaze enabled', 'class 4 excl. extendgaze enabled'])
+    # plt.savefig('smoothwindowm4.png', dpi=600)
+    # print(maxs0, maxs1)
+
+
+    print('dti')
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_m4extendgaze0/',
+                                                                                                            src='../experiments/model4_extendgaze0/', getstats=False)
+
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_m4extendgaze0/',
+                                                                                              src='../experiments/model4_extendgaze0/', thresholds=dispersions_avg, getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    print()
+
+    # first learn average dispersions between every two frames
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_m4extendgaze1/',
+                                                                                                            src='../experiments/model4_extendgaze1/', getstats=False)
+
+    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_m4extendgaze1/',
+                                                                                              src='../experiments/model4_extendgaze1/', thresholds=dispersions_avg, getstats=True)
+    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    print()
+
+    # smoothing method
+    print('smoothing')
     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
-        window_len=40, dest='./aggr_l2csextendgaze0smoothed/', src='./aggr_l2csextendgaze0/', getstats=True)
+        window_len=29, dest='./aggr_m4smooth0/', src='../experiments/model4_extendgaze0/', getstats=True)
     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
     print(aggregated_ck.mean(), aggregated_ckw4.mean())
     print()
 
     aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
-        window_len=40, dest='./aggr_l2csextendgaze1smoothed/', src='./aggr_l2csextendgaze1/', getstats=True)
-    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
-    print(aggregated_ck.mean(), aggregated_ckw4.mean())
-
-    print()
-
-    # first smoothing then aggregation
-    print('smoothing-aggregation')
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze0/',
-                                                                                                            src='./aggr_smooth0/', getstats=False)
-
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze0/',
-                                                                                              src='./aggr_smooth0/', thresholds=dispersions_avg, getstats=True)
+        window_len=28, dest='./aggr_m4smooth1/', src='../experiments/model4_extendgaze1/', getstats=True)
     print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
     print(aggregated_ck.mean(), aggregated_ckw4.mean())
     print()
 
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze1/',
-                                                                                                            src='./aggr_smooth1/', getstats=False)
+    
 
-    aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze1/',
-                                                                                              src='./aggr_smooth1/', thresholds=dispersions_avg, getstats=True)
-    print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
-    print(aggregated_ck.mean(), aggregated_ckw4.mean())
-    print()
+    # # first smoothing then aggregation
+    # print('smoothing-aggregation')
+    # aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze0/',
+    #                                                                                                         src='./aggr_smooth0/', getstats=False)
 
-    print('find optimal smoothing')
-    maxs0 = 24
-    maxs1 = 24
-    max_aggext0 = 0
-    max_aggext1 = 0
+    # aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze0/',
+    #                                                                                           src='./aggr_smooth0/', thresholds=dispersions_avg, getstats=True)
+    # print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    # print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    # print()
 
-    for s in range(3, 60, 1):
-        print('smoothing', s)
-        aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
-            window_len=s, dest='./aggr_smooth0/', src='../experiments/l2cs_extendgaze0/', getstats=True)
-        print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
-        print(aggregated_ck.mean(), aggregated_ckw4.mean())
-        print()
+    # aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, dispersions_avg = aggregatedti(threshold=0, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze1/',
+    #                                                                                                         src='./aggr_smooth1/', getstats=False)
 
-        if aggregated_ckw4.mean() > max_aggext0:
-            max_aggext0 = aggregated_ckw4.mean()
-            maxs0 = s
+    # aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4, _ = aggregatedti(threshold=1/5, min_fixation=0.1, dest='./aggr_smoothedl2csextendgaze1/',
+    #                                                                                           src='./aggr_smooth1/', thresholds=dispersions_avg, getstats=True)
+    # print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    # print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    # print()
 
-        aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
-            window_len=s, dest='./aggr_smooth1/', src='../experiments/l2cs_extendgaze1/', getstats=True)
-        print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
-        print(aggregated_ck.mean(), aggregated_ckw4.mean())
-        print()
+    # # smoothing method combined. First aggregation, then smoothing
+    # print('aggregation-smoothing')
+    # aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
+    #     window_len=39, dest='./aggr_l2csextendgaze0smoothed/', src='./aggr_l2csextendgaze0/', getstats=True)
+    # print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    # print(aggregated_ck.mean(), aggregated_ckw4.mean())
+    # print()
 
-        if aggregated_ckw4.mean() > max_aggext1:
-            max_aggext1 = aggregated_ckw4.mean()
-            maxs1 = s
-
-    print(maxs0, maxs1, max_aggext0, max_aggext1)
+    # aggregated_ck, not_aggregated_ck,  aggregated_ckw4, not_aggregated_ckw4 = smooth(
+    #     window_len=39, dest='./aggr_l2csextendgaze1smoothed/', src='./aggr_l2csextendgaze1/', getstats=True)
+    # print(not_aggregated_ck.mean(), not_aggregated_ckw4.mean())
+    # print(aggregated_ck.mean(), aggregated_ckw4.mean())
